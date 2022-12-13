@@ -204,11 +204,11 @@ void loop() {
       GAP_TIME = ON_TIME*ON_COUNTER + OFF_TIME*OFF_COUNTER;
       }
 
-    // // Check for external interrupt.
-    if (BUTTON_FLAG) {
-      digitalWrite(LED_PIN, LOW);
-      break;
-      }
+//    // Check for external interrupt.
+//    if (BUTTON_FLAG) {
+//      digitalWrite(LED_PIN, LOW);
+//      break;
+//    }
 
     // Speed control if on.
     if (TARGET == SET_OMEGA) {
@@ -223,17 +223,18 @@ void loop() {
         if (!OMEGA) {
           OMEGA = 0;
           }
+        else {
+          PID_ERROR[1]  = OMEGA - SET_OMEGA; // Proportional
+//          PID_ERROR[2] += PID_ERROR[1] * READ_TIME; // Integral
+          PID_ERROR[4]  = (PID_ERROR[1] - PID_ERROR[4]);
+          PID_ERROR[3]  = (abs(PID_ERROR[4])<1E-3) ? 0 : PID_ERROR[4] / READ_TIME; // Differential
+          PID_ERROR[4] = PID_ERROR[1];
+  
+          DIM_TIME += 0.15*PID_ERROR[1] + 20*PID_ERROR[3]; //+ 0*PID_ERROR[2]
+          DIM_TIME  = constrain(DIM_TIME, 5, 8000);
+          }
         
         Serial.println(OMEGA);
-
-        PID_ERROR[1]  = OMEGA - SET_OMEGA; // Proportional
-        PID_ERROR[2] += PID_ERROR[1] * READ_TIME; // Integral
-        PID_ERROR[4]  = (PID_ERROR[1] - PID_ERROR[4]);
-        PID_ERROR[3]  = (abs(PID_ERROR[4])<1E-3) ? 0 : PID_ERROR[4] / READ_TIME; // Differential
-        PID_ERROR[4] = PID_ERROR[1];
-
-        DIM_TIME += 0.15*PID_ERROR[1] + 0*PID_ERROR[2] + 20*PID_ERROR[3];
-        DIM_TIME  = constrain(DIM_TIME, 5, 8000);
 
         START_COUNT = ReadCount();
         START_TIME  = millis();
