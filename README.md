@@ -183,7 +183,7 @@ $$\left(\frac{1.1782\times 10^4 - \Omega}{2.0849\times 10^{-8}}\right)^{3.3317\t
 
 Which looks like this:
 
-<iframe src="https://www.desmos.com/calculator/y3etjdybc4?embed" width="600" height="370" style="border: 1px solid #ccc" frameborder=0></iframe>
+![<iframe src="https://www.desmos.com/calculator/y3etjdybc4?embed" width="600" height="370" style="border: 1px solid #ccc" frameborder=0></iframe>](./Images/Dim_vs_Speed.png)
 
 **Line 228**
 
