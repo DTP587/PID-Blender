@@ -8,10 +8,10 @@
 #define BUTTON_PIN  7 // Button pin.
 #define AC_LOAD     5 // Output to Opto-Triac GATE pin.
 
-#define TOTAL_TIME  1     // Minutes, total time on + off
-#define ON_TIME     10    // Seconds, on time
-#define OFF_TIME    10    // Seconds, off time
-#define SET_OMEGA   6500  // RPM
+#define TOTAL_TIME  150   // Minutes, total time on + off
+#define ON_TIME     60    // Seconds, on time
+#define OFF_TIME    90    // Seconds, off time
+#define SET_OMEGA   8000  // RPM
 
 // ------------------ Screen -------------------
 
@@ -182,6 +182,7 @@ void loop() {
         // Display on message
 
         TARGET = SET_OMEGA;
+        PID_ERROR[2] = 0; //Clear Integral memory
 
         START_COUNT = COUNT;
         START_TIME  = millis();
@@ -231,7 +232,7 @@ void loop() {
         PID_ERROR[3]  = (abs(PID_ERROR[4])<1E-3) ? 0 : PID_ERROR[4] / READ_TIME; // Differential
         PID_ERROR[4] = PID_ERROR[1];
 
-        DIM_TIME += 0.15*PID_ERROR[1] + 0.00004*PID_ERROR[2] + 25*PID_ERROR[3];
+        DIM_TIME += 0.15*PID_ERROR[1] + 0*PID_ERROR[2] + 20*PID_ERROR[3];
         DIM_TIME  = constrain(DIM_TIME, 5, 8000);
 
         START_COUNT = ReadCount();

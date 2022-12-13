@@ -199,6 +199,12 @@ DIM_TIME  = constrain(DIM_TIME, 5, 8000);
 ```
 With our current error being the difference between our measured and target speed, integral error being our current error multiplied by our time between measurements and our differential being the difference between our current error and our previous error divided by our time between measurements, we can proportionally add these together in just the right quantities to control our `DIM_TIME` signal. Constraining the signal helps to avoid the situation where the PID signal flies too far either way in an uncontrollable way.
 
+### Output
+
+The current speed (`OMEGA`) is outputted directly to serial. A typical working cycle would look something like:
+
+![Blender performance](Blender_Serial_Output.png)
+
 ## Potential Changes
 
 List of changes and whether I've completed them.
