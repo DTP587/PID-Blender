@@ -203,7 +203,7 @@ With our current error being the difference between our measured and target spee
 
 The current speed (`OMEGA`) is outputted directly to serial. A typical working cycle would look something like:
 
-![Blender performance](Blender_Serial_Output.png)
+![Blender performance](./Images/Blender_Serial_Output.png)
 
 ## Potential Changes
 
