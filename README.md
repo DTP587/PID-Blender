@@ -7,9 +7,9 @@ _From right to left, V1: Servo-Operated Dimmer Blender, V2: Uncontrolled Dimmer 
 
 ### Background \& Motivation
 
-For my current work, I needed a blender that could be operated with good control over the exact impeller speed. Initially, I wired dimmer switch into a typical household blender, but found that it was incredibly difficult to maintain the speed accurately and repeatably, especially at low speeds ($<6000\;rpm$). To improve performance, it was clear what was required was a system that could control the speed dynamically.
+For my current work, I needed a blender that could be operated with good control over the exact impeller speed. Initially, I wired dimmer switch into a typical household blender, but found that it was incredibly difficult to maintain the speed accurately and repeatably, especially at low speeds (< $6000$ $rpm$). To improve performance, it was clear what was required was a system that could control the speed dynamically.
 
-The blenders I have been controlling range between $600\;W$ to $2\;kW$ peak power, which they can sustain for a maximum of $\approx1\;min$ before they get dangerously hot (and melt-y). Some come with automatic sensors to detect when they are overheating and shut-off automatically to save the motor. From my testing, I recommend following the manufacturer's recommendations alternating running it for $1\;min$ **ON** with a subsequent minimum of $1\;min$ **OFF** to allow it to cool down.
+The blenders I have been controlling range between $600$ $W$ to $2$ $kW$ peak power, which they can sustain for a maximum of $\approx 1$ $min$ before they get dangerously hot (and melt-y). Some come with automatic sensors to detect when they are overheating and shut-off automatically to save the motor. From my testing, I recommend following the manufacturer's recommendations alternating running it for $1$ $min$ **ON** with a subsequent minimum of $1$ $min$ **OFF** to allow it to cool down.
 
 ### Disclaimer!
 
@@ -97,7 +97,7 @@ This is how I set up my box, with the AC Dimmer mounted towards the bottom of th
 
 In this section, I'll comment on the overarching function of the arduino code in `/Arduino Sketches/Pink_Box_v2/Pink_Box_v2.ino`. This contains a routine which runs the blender on and off for the specified amount of time defined at the top of the file.
 
-It is important to stress that interrupt service routines are essential, but also the hardest bit about the project. As `millis()` and `micros()` wont update whilst in the interrupt, and hence mess with the on/off timing which we need to keep accurate. More importantly though, the AC signal requires dimming once every half period of AC ($10\;ms$ - $17\;ms$). In summary then, our loop needs to be fast enough to:
+It is important to stress that interrupt service routines are essential, but also the hardest bit about the project. As `millis()` and `micros()` wont update whilst in the interrupt, and hence mess with the on/off timing which we need to keep accurate. More importantly though, the AC signal requires dimming once every half period of AC ( $10$ $ms$ - $17$ $ms$ ). In summary then, our loop needs to be fast enough to:
 
 - Tell the time
 - Read the encoder speed
@@ -107,7 +107,7 @@ And finally,
 
 - Signal the dimmer
 
-All within the $10\;ms$ between the Zero-Cross signal. The pro micro has a clock speed of $16\;MHz$, with mains AC being $50$ - $60\;Hz$, which comes to $160'000$ operations between each Zero-Cross. In context, one division operation takes $\approx 2'000$ clock cycles to compute (division is notoriously slow, [this now defunct blogpost explained it really well](http://www.engblaze.com/faster-code-fridays-understand-division-and-speed-of-operations/)). This turns out to not be enough time to output to the Screen, for instance.
+All within the $10$ $ms$ between the Zero-Cross signal. The pro micro has a clock speed of $16$ $MHz$, with mains AC being $50$ - $60$ $Hz$, which comes to $160'000$ operations between each Zero-Cross. In context, one division operation takes $\approx 2'000$ clock cycles to compute (division is notoriously slow, [this now defunct blogpost explained it really well](http://www.engblaze.com/faster-code-fridays-understand-division-and-speed-of-operations/)). This turns out to not be enough time to output to the Screen, for instance.
 
 ### Encoder Signal
 
@@ -119,7 +119,7 @@ void UpdateCount() {
 }
 ```
 
-Reading the number of counts (Stored in `COUNT` and read into `READ_COUNT`) between every $1000\;ms$ gives us an indication of the speed with a resolution of $\pm 60\;rpm$ with a single encoder gap. The maximum feasible number of encoder gaps for this setup seems to be between two and three ($\pm 30$ - $20\;rpm$ resolution). You'll find this beginning at line 217:
+Reading the number of counts (Stored in `COUNT` and read into `READ_COUNT`) between every $1000$ $ms$ gives us an indication of the speed with a resolution of ± $60$ $rpm$ with a single encoder gap. The maximum feasible number of encoder gaps for this setup seems to be between two and three ( ± $30$ - $20$ $rpm$ resolution). You'll find this beginning at line 217:
 
 ```
 // Update speed measurement every xxx ms
@@ -162,7 +162,7 @@ if (ZERO_STATE[1] == 1E3) {
     }
   }
 ```
-Evaluate the Zero-Cross flag, which when true, we calculate the time since the Zero-Cross was triggered. Once the time reaches the `DIM_TIME` calculated by the PID Control loop, we trigger the gate of the TRIAC to allow the AC to flow. Finally, after a short propogation period ($10\;\mu s$) for the TRIAC to trigger, the gate is set LOW and the Zero-Cross flag is reset, ready for the next signal from the dimmer.
+Evaluate the Zero-Cross flag, which when true, we calculate the time since the Zero-Cross was triggered. Once the time reaches the `DIM_TIME` calculated by the PID Control loop, we trigger the gate of the TRIAC to allow the AC to flow. Finally, after a short propogation period ( $10$ $\mu s$ ) for the TRIAC to trigger, the gate is set LOW and the Zero-Cross flag is reset, ready for the next signal from the dimmer.
 
 ### PID Control
 
@@ -204,4 +204,4 @@ With our current error being the difference between our measured and target spee
 List of changes and whether I've completed them.
 
 - [ ] The lid to the box doesnt fit the screen perfectly.
-- [ ] The $60\;rpm$ resolution is a bit of a pain at low speeds and could be rectified with a time-between-counts based approach to measuring speed versus the current counts-within-time.
+- [ ] The $60$ $rpm$ resolution is a bit of a pain at low speeds and could be rectified with a time-between-counts based approach to measuring speed versus the current counts-within-time.
