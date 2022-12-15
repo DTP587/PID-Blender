@@ -8,10 +8,10 @@
 #define BUTTON_PIN  7 // Button pin.
 #define AC_LOAD     5 // Output to Opto-Triac GATE pin.
 
-#define TOTAL_TIME  150   // Minutes, total time on + off
+#define TOTAL_TIME  2     // Minutes, total time on + off
 #define ON_TIME     60    // Seconds, on time
-#define OFF_TIME    90    // Seconds, off time
-#define SET_OMEGA   8000  // RPM
+#define OFF_TIME    60    // Seconds, off time
+#define SET_OMEGA   11500 // RPM 1000 min, 20000 max
 
 // ------------------ Screen -------------------
 
@@ -24,7 +24,7 @@
 #define SCREEN_ADDRESS 0x3C
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define OLED_RESET    -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -59,9 +59,13 @@ volatile unsigned int ZERO_STATE[3];
 volatile bool BUTTON_FLAG = false;
 
 // Dimming time
-unsigned int DIM_TIME = constrain(
+//unsigned int DIM_TIME = constrain( // SMALL JUG
+//    pow((11782 - SET_OMEGA)/2.0849E-8, 0.33317),  // Approximate DIM_TIME
+//    5, 8000 // min and max
+//    );  // Dimming 8000 off 5 on
+unsigned int DIM_TIME = constrain( // LARGE JUG
     pow((11782 - SET_OMEGA)/2.0849E-8, 0.33317),  // Approximate DIM_TIME
-    5, 8000 // min and max
+    7000, 8000 // min and max
     );  // Dimming 8000 off 5 on
 
 unsigned int START_COUNT;
@@ -158,6 +162,7 @@ void loop() {
   unsigned int ON_COUNTER = 0;
   unsigned int OFF_COUNTER = 0;
   unsigned int TARGET = 0;
+  unsigned int SPEED_READ_COUNTER = 0;
 
   displayMessage(display, "CONNECTED");
   
@@ -186,6 +191,7 @@ void loop() {
 
         START_COUNT = COUNT;
         START_TIME  = millis();
+        SPEED_READ_COUNTER = 0;
 
         digitalWrite(LED_PIN, HIGH);
         ON_COUNTER += 1;
@@ -214,7 +220,7 @@ void loop() {
     if (TARGET == SET_OMEGA) {
       READ_TIME  = millis() - START_TIME;
       READ_COUNT = ReadCount() - START_COUNT;
-    
+      
       // Update speed measurement every xxx ms
       if (READ_TIME >= 1000) {
         OMEGA = ((60*1E3*READ_COUNT)/READ_TIME);
@@ -223,19 +229,26 @@ void loop() {
         if (!OMEGA) {
           OMEGA = 0;
           }
+        else if ((SPEED_READ_COUNTER < 1) && (ON_COUNTER > 1)) {
+          // Pass, don't update for the first cycle after rough angle is found
+          }
         else {
           PID_ERROR[1]  = OMEGA - SET_OMEGA; // Proportional
-//          PID_ERROR[2] += PID_ERROR[1] * READ_TIME; // Integral
+          PID_ERROR[2] += PID_ERROR[1];      // Integral
+                                             // Differential
           PID_ERROR[4]  = (PID_ERROR[1] - PID_ERROR[4]);
-          PID_ERROR[3]  = (abs(PID_ERROR[4])<1E-3) ? 0 : PID_ERROR[4] / READ_TIME; // Differential
-          PID_ERROR[4] = PID_ERROR[1];
+          PID_ERROR[3]  = (abs(PID_ERROR[4])<1E-3) ? 0 : PID_ERROR[4];
+          PID_ERROR[4]  = PID_ERROR[1];
   
-          DIM_TIME += 0.15*PID_ERROR[1] + 20*PID_ERROR[3]; //+ 0*PID_ERROR[2]
+          DIM_TIME += 0.06*PID_ERROR[1] + 0.011*PID_ERROR[2] + 0.06*PID_ERROR[3];
           DIM_TIME  = constrain(DIM_TIME, 5, 8000);
           }
         
+//        Serial.print(DIM_TIME);
+//        Serial.print(" ");
         Serial.println(OMEGA);
 
+        SPEED_READ_COUNTER += 1;
         START_COUNT = ReadCount();
         START_TIME  = millis();
 
