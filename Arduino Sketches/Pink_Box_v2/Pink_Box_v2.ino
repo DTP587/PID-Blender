@@ -8,10 +8,10 @@
 #define BUTTON_PIN  7 // Button pin.
 #define AC_LOAD     5 // Output to Opto-Triac GATE pin.
 
-#define TOTAL_TIME  2     // Minutes, total time on + off
-#define ON_TIME     60    // Seconds, on time
-#define OFF_TIME    60    // Seconds, off time
-#define SET_OMEGA   4000 // RPM 1000 min, 20000 max
+#define TOTAL_TIME  5     // Minutes, total time on + off
+#define ON_TIME     10   // Seconds, on time
+#define OFF_TIME    10    // Seconds, off time
+#define SET_OMEGA   10000 // RPM 1000 min, 20000 max
 
 // ------------------ Screen -------------------
 
@@ -28,7 +28,7 @@
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-void displayMessage(Adafruit_SSD1306 &display, String MESSAGE) {
+void displayMessage(Adafruit_SSD1306 &display, String MESSAGE, int TIME_SO_FAR) {
   // Display initial text
   display.clearDisplay();
   display.setTextSize(2); // 2x Size
@@ -41,7 +41,7 @@ void displayMessage(Adafruit_SSD1306 &display, String MESSAGE) {
   
   display.print(F("On  time: ")); display.print(ON_TIME); display.println(F(" s"));
   display.print(F("Off time: ")); display.print(OFF_TIME); display.println(F(" s"));
-  display.print(F("In Total: ")); display.print(TOTAL_TIME); display.println(F(" m"));
+  display.print(F("In Total: ")); display.print(TIME_SO_FAR); display.print("/"); display.print(TOTAL_TIME); display.println(F(" m"));
   display.println(F("---------------------"));
 
   display.setTextSize(1);
@@ -51,18 +51,15 @@ void displayMessage(Adafruit_SSD1306 &display, String MESSAGE) {
 
 // ----------------------------------------------
 
-// Speed Counter
+// Speed counter
 volatile int COUNT;
 // ZERO_CROSS_FLAG, ZERO_START_TIME, ZERO_READ_TIME
 volatile unsigned int ZERO_STATE[3];
 // Button flag
 volatile bool BUTTON_FLAG = false;
+// Button timer
+volatile long BUTTON_TIME;
 
-// Dimming time
-//unsigned int DIM_TIME = constrain( // SMALL JUG
-//    pow((11782 - SET_OMEGA)/2.0849E-8, 0.33317),  // Approximate DIM_TIME
-//    5, 8000 // min and max
-//    );  // Dimming 8000 off 5 on
 unsigned int DIM_TIME = constrain( // LARGE JUG
     pow((11782 - SET_OMEGA)/2.0849E-8, 0.33317),  // Approximate DIM_TIME
     7000, 8000 // min and max
@@ -89,8 +86,18 @@ void UpdateCount() {
 }
 
 void interruptISR() {
- BUTTON_FLAG = true;
- }
+  if (BUTTON_FLAG == false) {
+    BUTTON_TIME = millis() - BUTTON_TIME;
+    if (BUTTON_TIME > 200) {
+      Serial.println("Button Triggered");
+      BUTTON_FLAG = true;
+    }
+  }
+  else if (BUTTON_FLAG == true) {
+    // skip
+  }
+  BUTTON_TIME = millis();
+}
 
 int ReadCount() {
   return COUNT;
@@ -134,6 +141,7 @@ void setup() {
   pinMode(AC_LOAD, OUTPUT);   // Set AC Load pin as output
   digitalWrite(AC_LOAD, LOW); // triac On
   pinMode(LED_PIN, OUTPUT);   // LED pin output
+  digitalWrite(BUTTON_PIN, HIGH); // Set button high
   
   attachInterrupt( // Check whether signal is rising
     digitalPinToInterrupt(ZERO_PIN),
@@ -147,11 +155,11 @@ void setup() {
     RISING
   );
 
-  // attachInterrupt(
-  //   digitalPinToInterrupt(BUTTON_PIN),
-  //   interruptISR,
-  //   RISING
-  //   );
+  attachInterrupt(
+    digitalPinToInterrupt(BUTTON_PIN),
+    interruptISR,
+    LOW
+  );
 }
 
 // ----------------------------------------------
@@ -164,7 +172,7 @@ void loop() {
   unsigned int TARGET = 0;
   unsigned int SPEED_READ_COUNTER = 0;
 
-  displayMessage(display, "CONNECTED");
+  displayMessage(display, "CONNECTED", 0);
   
   while (!BUTTON_FLAG) {
     // Do nothing
@@ -172,7 +180,7 @@ void loop() {
   BUTTON_FLAG = false;
 
 
-  displayMessage(display, "PROCESSING");
+  displayMessage(display, "PROCESSING", 0);
   delay(1000);
 
   unsigned long START_ROUTINE_TIME = millis();
@@ -200,7 +208,7 @@ void loop() {
       else if (OFF_COUNTER < ON_COUNTER) {
 
         // Display off message
-        
+        displayMessage(display, "PROCESSING", GAP_TIME/60);
         TARGET = 0;
 
         digitalWrite(LED_PIN, LOW);
@@ -210,11 +218,11 @@ void loop() {
       GAP_TIME = ON_TIME*ON_COUNTER + OFF_TIME*OFF_COUNTER;
       }
 
-//    // Check for external interrupt.
-//    if (BUTTON_FLAG) {
-//      digitalWrite(LED_PIN, LOW);
-//      break;
-//    }
+    // Check for external interrupt.
+    if (BUTTON_FLAG) {
+      digitalWrite(LED_PIN, LOW);
+      break;
+    }
 
     // Speed control if on.
     if (TARGET == SET_OMEGA) {
@@ -274,10 +282,10 @@ void loop() {
   if (BUTTON_FLAG) {
     Serial.print("Time on: ");
     Serial.println(millisSince(START_ROUTINE_TIME));
-    displayMessage(display, "STOPPED");
+    displayMessage(display, "STOPPED", GAP_TIME/60);
     }
   else if (!BUTTON_FLAG) {
-    displayMessage(display, "COMPLETED");
+    displayMessage(display, "COMPLETED", TOTAL_TIME);
     }
 
   BUTTON_FLAG = false;
