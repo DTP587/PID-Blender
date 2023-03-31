@@ -11,7 +11,7 @@
 #define TOTAL_TIME  2     // Minutes, total time on + off
 #define ON_TIME     60    // Seconds, on time
 #define OFF_TIME    60    // Seconds, off time
-#define SET_OMEGA   11500 // RPM 1000 min, 20000 max
+#define SET_OMEGA   4000 // RPM 1000 min, 20000 max
 
 // ------------------ Screen -------------------
 
@@ -147,11 +147,11 @@ void setup() {
     RISING
   );
 
-  attachInterrupt(
-    digitalPinToInterrupt(BUTTON_PIN),
-    interruptISR,
-    RISING
-    );
+  // attachInterrupt(
+  //   digitalPinToInterrupt(BUTTON_PIN),
+  //   interruptISR,
+  //   RISING
+  //   );
 }
 
 // ----------------------------------------------

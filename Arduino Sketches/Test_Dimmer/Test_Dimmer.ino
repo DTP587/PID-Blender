@@ -32,7 +32,7 @@ signal.
 #define AC_LOAD  5  // Output to Opto-Triac GATE pin.
 #define ZERO_PIN 1  // Interrupt to zero cross detection source.
 
-unsigned char dimming = 50;  // Dimming level (0-100) (0 - on, 95 - off)
+unsigned char dimming = 80;  // Dimming level (0-100) (0 - on, 95 - off)
                              // below 5 there is some flickering
 
 void setup() {
@@ -54,7 +54,7 @@ void setup() {
 // function to be fired at the zero crossing to dim the light
 void zero_crosss_int() {
   long dimtime = (100*dimming);   // For 60Hz =>65
-//  Serial.println(dimtime);
+  Serial.println(dimtime);
   delayMicroseconds(dimtime);    // Off cycle
   digitalWrite(AC_LOAD, HIGH);   // triac On
   delayMicroseconds(10);
