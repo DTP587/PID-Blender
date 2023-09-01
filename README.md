@@ -1,5 +1,5 @@
 # PID Blender
-_Blender with PID Speed Control, Build Notes. Part of the Open Science Framework repository [Open2DM](https://osf.io/evupy/)_
+_Blender with PID Speed Control, Build Notes. Part of the Open Science Framework repository [OpenLPE](https://osf.io/evupy/)_
 
 ![Image of all three blenders in order](./Images/Blenders.jpeg)
 
@@ -7,7 +7,7 @@ _From right to left, Dimmer-Blender v1, Dimmer-Blender v2, PID-Blender._
 
 ### Background \& Motivation
 
-_This is part of the [Open2DM](https://osf.io/evupy/) labware project._
+_This is part of the [OpenLPE](https://osf.io/evupy/) labware project._
 
 For my current work, I needed a blender that could be operated with good control over the exact impeller speed. Initially, I wired dimmer switch into a typical household blender, but found that it was incredibly difficult to maintain the speed accurately and repeatably, especially at low speeds (< $6000$ $rpm$). To improve performance, it was clear what was required was a system that could control the speed dynamically.
 
