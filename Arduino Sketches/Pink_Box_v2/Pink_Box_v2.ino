@@ -60,10 +60,11 @@ volatile bool BUTTON_FLAG = false;
 // Button timer
 volatile long BUTTON_TIME;
 
-unsigned int DIM_TIME = constrain( // LARGE JUG
-    pow((11782 - SET_OMEGA)/2.0849E-8, 0.33317),  // Approximate DIM_TIME
+unsigned int SET_POINT = constrain( // LARGE JUG
+    pow((11782 - SET_OMEGA)/2.0849E-8, 0.33317),  // Approximate dim_time
     7000, 8000 // min and max
     );  // Dimming 8000 off 5 on
+unsigned int control_signal, dim_time;
 
 unsigned int START_COUNT;
 unsigned int START_TIME;
@@ -77,8 +78,8 @@ float OMEGA;
 
 void zeroCrossISR() {
   digitalWrite(AC_LOAD, LOW);
-  ZERO_STATE[2] = micros();
-  ZERO_STATE[1] = 1E3;
+  ZERO_STATE[1] = micros();
+  ZERO_STATE[0] = 1E3;
 }
 
 void UpdateCount() {
@@ -195,7 +196,6 @@ void loop() {
         // Display on message
 
         TARGET = SET_OMEGA;
-        PID_ERROR[2] = 0; //Clear Integral memory
 
         START_COUNT = COUNT;
         START_TIME  = millis();
@@ -236,23 +236,24 @@ void loop() {
         // check for nan values
         if (!OMEGA) {
           OMEGA = 0;
-          }
+        }
         else if ((SPEED_READ_COUNTER < 1) && (ON_COUNTER > 1)) {
           // Pass, don't update for the first cycle after rough angle is found
-          }
+        }
         else {
-          PID_ERROR[1]  = OMEGA - SET_OMEGA; // Proportional
-          PID_ERROR[2] += PID_ERROR[1];      // Integral
+          PID_ERROR[0]  = OMEGA - SET_OMEGA; // Proportional
+          PID_ERROR[1] += PID_ERROR[0];      // Integral
+          PID_ERROR[1] = constrain(PID_ERROR[1], /*min*/, /*max*/)
                                              // Differential
-          PID_ERROR[4]  = (PID_ERROR[1] - PID_ERROR[4]);
-          PID_ERROR[3]  = (abs(PID_ERROR[4])<1E-3) ? 0 : PID_ERROR[4];
-          PID_ERROR[4]  = PID_ERROR[1];
+          PID_ERROR[3]  = (PID_ERROR[0] - PID_ERROR[3]);
+          PID_ERROR[2]  = (abs(PID_ERROR[3])<1E-3) ? 0 : PID_ERROR[3];
+          PID_ERROR[3]  = PID_ERROR[0];
   
-          DIM_TIME += 0.06*PID_ERROR[1] + 0.011*PID_ERROR[2] + 0.06*PID_ERROR[3];
-          DIM_TIME  = constrain(DIM_TIME, 5, 8000);
-          }
+          control_signal = (1/READ_TIME)*(0*PID_ERROR[0] + 0*PID_ERROR[1] + 0*PID_ERROR[2]);
+          dim_time  = constrain(SET_POINT+control_signal, 5, 8000);
+        }
         
-//        Serial.print(DIM_TIME);
+//        Serial.print(dim_time);
 //        Serial.print(" ");
         Serial.println(OMEGA);
 
@@ -263,13 +264,13 @@ void loop() {
       }
     
       // Update TRIAC if needed
-      if (ZERO_STATE[1] == 1E3) {
-        ZERO_STATE[3] = micros() - ZERO_STATE[2];
-        if (ZERO_STATE[3] >= DIM_TIME) {
+      if (ZERO_STATE[0] == 1E3) {
+        ZERO_STATE[2] = micros() - ZERO_STATE[1];
+        if (ZERO_STATE[2] >= dim_time) {
           digitalWrite(AC_LOAD, HIGH);   // triac On
-          if (ZERO_STATE[3] >= (DIM_TIME + 10)) {
+          if (ZERO_STATE[2] >= (dim_time + 10)) {
             digitalWrite(AC_LOAD, LOW);  // triac Off
-            ZERO_STATE[1]=0;
+            ZERO_STATE[0]=0;
           }
         }
       }
