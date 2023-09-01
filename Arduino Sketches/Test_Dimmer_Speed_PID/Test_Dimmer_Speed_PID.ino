@@ -4,10 +4,11 @@
 
 #define SET_SPEED 1000 // Target Speed
 
-unsigned int DIM_TIME = constrain(
+unsigned int SET = constrain(
     pow((11782 - SET_SPEED)/2.0849E-8, 0.33317),  // Approximate DIM_TIME
     5, 8000 // min and max
     );  // Dimming 9000 off 50 on
+unsigned int control_signal, DIM_TIME;
 
 // Without Control
 //8100 - 500
@@ -93,18 +94,18 @@ void loop() {
       Serial.println(OMEGA);
 
 
-      PID_ERROR[1]  = OMEGA - SET_SPEED; // Proportional
-      PID_ERROR[2] += PID_ERROR[1] * READ_TIME; // Integral
-      PID_ERROR[4]  = (PID_ERROR[1] - PID_ERROR[4]);
-      PID_ERROR[3]  = (abs(PID_ERROR[4])<1E-3) ? 0 : PID_ERROR[4] / READ_TIME; // Differential
+      PID_ERROR[0]  = OMEGA - SET_SPEED; // Proportional
+      PID_ERROR[1] += PID_ERROR[0]; // Integral
+      PID_ERROR[3]  = (PID_ERROR[0] - PID_ERROR[3]);
+      PID_ERROR[2]  = (abs(PID_ERROR[3])<1E-3) ? 0 : PID_ERROR[3]; // Differential
 
-      DIM_TIME += 0.18*PID_ERROR[1] + 0.0006*PID_ERROR[2] + 16*PID_ERROR[3];
-      DIM_TIME  = constrain(DIM_TIME, 5, 8000);
+      control_signal = (1/READ_TIME)*(0*PID_ERROR[0] + 0*PID_ERROR[1] + 0*PID_ERROR[2]);
+      DIM_TIME  = constrain(SET+control_signal, 5, 8000);
       
       START_COUNT = ReadCount();
       START_TIME  = millis();
 
-      PID_ERROR[4] = PID_ERROR[1];
+      PID_ERROR[3] = PID_ERROR[0];
     }
   
     // Update TRIAC if needed
