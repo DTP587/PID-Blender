@@ -128,21 +128,21 @@ Next is the Zero-Cross interrupt; In this one, we have to do a couple more thing
 ```
 void zeroCrossISR() {
   digitalWrite(AC_LOAD, LOW);
-  ZERO_STATE[2] = micros();
-  ZERO_STATE[1] = 1E3;
+  ZERO_STATE[1] = micros();
+  ZERO_STATE[0] = 1E3;
 }
 ```
 Firstly, we begin by setting the gate pin of the TRIAC (`AC_LOAD`) to `LOW`, which ensures we don't prematurely open the taps to AC straight away. We then take note of the time and set a flag. In our main loop then, we action this at line 242:
 
 ```
 // Update TRIAC if needed
-if (ZERO_STATE[1] == 1E3) {
-  ZERO_STATE[3] = micros() - ZERO_STATE[2];
-  if (ZERO_STATE[3] >= DIM_TIME) {
+if (ZERO_STATE[0] == 1E3) {
+  ZERO_STATE[2] = micros() - ZERO_STATE[2];
+  if (ZERO_STATE[2] >= dim_time) {
     digitalWrite(AC_LOAD, HIGH);   // triac On
-    if (ZERO_STATE[3] >= (DIM_TIME + 10)) {
+    if (ZERO_STATE[2] >= (dim_time + 10)) {
       digitalWrite(AC_LOAD, LOW);  // triac Off
-      ZERO_STATE[1]=0;
+      ZERO_STATE[0]=0;
       }
     }
   }
@@ -157,7 +157,7 @@ Next up, we'll look briefly at how the PID control loop is implemented:
 
 ```
 // Dimming time
-unsigned int DIM_TIME = constrain(
+unsigned int SET_POINT = constrain(
     pow((11782 - SET_OMEGA)/2.0849E-8, 0.33317),  // Approximate DIM_TIME
     5, 8000 // min and max
     );  // Dimming 8000 off 5 on
@@ -173,16 +173,17 @@ Which looks like this:
 **Line 228**
 
 ```
-PID_ERROR[1]  = OMEGA - SET_OMEGA;        // Proportional
-PID_ERROR[2] += PID_ERROR[1] * READ_TIME; // Integral
-PID_ERROR[4]  = (PID_ERROR[1] - PID_ERROR[4]);
-PID_ERROR[3]  = (abs(PID_ERROR[4])<1E-3) ? 0 : PID_ERROR[4] / READ_TIME; // Differential
-PID_ERROR[4] = PID_ERROR[1];
+PID_ERROR[0]  = OMEGA - SET_OMEGA;        // Proportional
+PID_ERROR[1] += PID_ERROR[0] * READ_TIME; // Integral
+PID_ERROR[1]  = constrain(PID_ERROR[1], /*min*/, /*max*/);
+PID_ERROR[3]  = (PID_ERROR[0] - PID_ERROR[4]);
+PID_ERROR[2]  = (abs(PID_ERROR[3])<1E-3) ? 0 : PID_ERROR[3]; // Differential
+PID_ERROR[3] = PID_ERROR[0];
 
-DIM_TIME += 0.15*PID_ERROR[1] + 0.00004*PID_ERROR[2] + 25*PID_ERROR[3];
-DIM_TIME  = constrain(DIM_TIME, 5, 8000);
+control_signal = (1/READ_TIME)*(/*kp*/*PID_ERROR[1] + /*ki*/*PID_ERROR[2] + /*kd*/*PID_ERROR[3]);
+dim_time  = constrain(SET_POINT + control_signal, 5, 8000);
 ```
-With our current error being the difference between our measured and target speed, integral error being our current error multiplied by our time between measurements and our differential being the difference between our current error and our previous error divided by our time between measurements, we can proportionally add these together in just the right quantities to control our `DIM_TIME` signal. Constraining the signal helps to avoid the situation where the PID signal flies too far either way in an uncontrollable way.
+With our current error being the difference between our measured and target speed, integral error being our current error multiplied by our time between measurements and our differential being the difference between our current error and our previous error divided by our time between measurements, we can proportionally add these together in just the right quantities to control our `dim_time` signal. Constraining the signal helps to avoid the situation where the PID signal flies too far either way in an uncontrollable way.
 
 ### Output
 
